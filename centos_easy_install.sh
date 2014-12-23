@@ -320,7 +320,8 @@ cd nginx-1.7.2/
 --with-http_stub_status_module \
 --with-http_ssl_module \
 --with-http_gzip_static_module \
---with-ipv6
+--with-ipv6 \
+--with-http_realip_module
 make
 make install
 cd ../
