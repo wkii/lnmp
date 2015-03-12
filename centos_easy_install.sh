@@ -39,7 +39,7 @@ yum -y update
 
 #################### 公用包安装 ####################
 # public
-yum -y install gcc gcc-c++ make
+yum -y install gcc gcc-c++ make wget
 # for php
 yum -y install libxml2 libxml2-devel zlib-devel
 yum -y install openssl openssl-devel
@@ -63,24 +63,26 @@ mkdir -p runtime
 cd $soft_dir
 
 ################### 必要的软件包 #####################
-# pcre nginx
+# pcre with nginx
 # autoconf libiconv mcrypt libmcrypt mhash php5.5
-cd $soft_dir
-# wget -c ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.35.tar.gz
-# wget -c http://nginx.org/download/nginx-1.7.2.tar.gz
+# wget -c ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.36.tar.gz
+# wget -c http://nginx.org/download/nginx-1.7.10.tar.gz
 
 # wget -c http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
 # wget -c http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz
 # wget -c http://jaist.dl.sourceforge.net/project/mcrypt/MCrypt/2.6.8/mcrypt-2.6.8.tar.gz
 # wget -c http://sourceforge.net/projects/mcrypt/files/Libmcrypt/2.5.8/libmcrypt-2.5.8.tar.gz
 # wget -c http://sourceforge.net/projects/mhash/files/mhash/0.9.9.9/mhash-0.9.9.9.tar.gz
-# wget -c http://cn2.php.net/distributions/php-5.5.14.tar.gz
+# wget -c http://cn2.php.net/distributions/php-5.5.22.tar.gz
 ## php扩展
 # wget -c http://pecl.php.net/get/memcached-2.2.0.tgz
 # wget -c https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz
 # wget -c http://pecl.php.net/get/memcache-2.2.7.tgz
+# wget -c http://pecl.php.net/get/redis-2.2.7.tgz
 # wget -c http://pecl.php.net/get/imagick-3.1.2.tgz
 # wget -c http://pecl.php.net/get/gmagick-1.1.7RC2.tgz
+## memcached
+# wget -c http://www.memcached.org/files/memcached-1.4.22.tar.gz
 
 ###################  安装依赖包 都是给php的 #######################
 
@@ -120,6 +122,7 @@ make
 make install
 cd ../../
 
+# 创建软链
 ln -s /usr/local/lib/libmcrypt.la /usr/lib/libmcrypt.la
 ln -s /usr/local/lib/libmcrypt.so /usr/lib/libmcrypt.so
 ln -s /usr/local/lib/libmcrypt.so.4 /usr/lib/libmcrypt.so.4
@@ -130,6 +133,7 @@ ln -s /usr/local/lib/libmhash.so /usr/lib/libmhash.so
 ln -s /usr/local/lib/libmhash.so.2 /usr/lib/libmhash.so.2
 ln -s /usr/local/lib/libmhash.so.2.0.1 /usr/lib/libmhash.so.2.0.1
 ln -s /usr/local/bin/libmcrypt-config /usr/bin/libmcrypt-config
+/sbin/ldconfig
 
 echo "Install mcrypt ......"
 cd $runtime_dir
@@ -140,27 +144,27 @@ make && make install
 cd ..
 
 if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
-	ln -s /usr/lib64/libpng.* /usr/lib/
-	ln -s /usr/lib64/libjpeg.* /usr/lib/
-	ln -sv /usr/lib64/libldap* /usr/lib/
+    ln -s /usr/lib64/libpng.* /usr/lib/
+    ln -s /usr/lib64/libjpeg.* /usr/lib/
+    ln -sv /usr/lib64/libldap* /usr/lib/
 fi
 
 ulimit -v unlimited
 
 if [ ! `grep -l "/lib"    '/etc/ld.so.conf'` ]; then
-	echo "/lib" >> /etc/ld.so.conf
+    echo "/lib" >> /etc/ld.so.conf
 fi
 
 if [ ! `grep -l '/usr/lib'    '/etc/ld.so.conf'` ]; then
-	echo "/usr/lib" >> /etc/ld.so.conf
+    echo "/usr/lib" >> /etc/ld.so.conf
 fi
 
 if [ -d "/usr/lib64" ] && [ ! `grep -l '/usr/lib64'    '/etc/ld.so.conf'` ]; then
-	echo "/usr/lib64" >> /etc/ld.so.conf
+    echo "/usr/lib64" >> /etc/ld.so.conf
 fi
 
 if [ ! `grep -l '/usr/local/lib'    '/etc/ld.so.conf'` ]; then
-	echo "/usr/local/lib" >> /etc/ld.so.conf
+    echo "/usr/local/lib" >> /etc/ld.so.conf
 fi
 
 ldconfig
@@ -176,8 +180,8 @@ echo "fs.file-max=65535" >> /etc/sysctl.conf
 #################### 安装PHP ##########################
 echo "Install php5.5 ......"
 cd $runtime_dir
-tar -zxvf $soft_dir"/php-5.5.14.tar.gz"
-cd php-5.5.14
+tar -zxvf $soft_dir"/php-5.5.22.tar.gz"
+cd php-5.5.22
 
 ./configure \
 --prefix=/usr/local/php \
@@ -229,11 +233,11 @@ make install
 
 # 首次安装，备份默认的php.ini文件
 if [ ! -s /usr/local/php/etc/php.ini.default ]; then
-	cp php.ini-production /usr/local/php/etc/php.ini.default
+    cp php.ini-production /usr/local/php/etc/php.ini.default
 fi
 
 if [ ! -s /usr/local/php/etc/php.ini ]; then
-	cp php.ini-production /usr/local/php/etc/php.ini
+    cp php.ini-production /usr/local/php/etc/php.ini
 fi
 cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
 chmod +x /etc/init.d/php-fpm
@@ -286,6 +290,7 @@ make && make install
 cd ../
 
 # 添加扩展到php.ini里
+# 扩展目录 /usr/local/php/lib/php/extensions/no-debug-non-zts-20121212/
 sed -i 's#;extension=php_xsl.dll#;extension=php_zip.dll\n\nextension = "memcache.so"\nextension = "memcached.so"\nextension = "imagick.so"\nextension = "gmagick.so"\n#' /usr/local/php/etc/php.ini
 sed -i 's/;date.timezone =/date.timezone = "Asia\/Shanghai"/g' /usr/local/php/etc/php.ini
 sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /usr/local/php/etc/php.ini
@@ -305,15 +310,15 @@ useradd -s /sbin/nologin -g www www
 ldconfig
 
 cd $runtime_dir
-tar -zxvf $soft_dir"/pcre-8.35.tar.gz"
-cd pcre-8.35/
+tar -zxvf $soft_dir"/pcre-8.36.tar.gz"
+cd pcre-8.36/
 ./configure
 make && make install
 cd ../
 
 cd $runtime_dir
-tar -zxvf $soft_dir"/nginx-1.7.2.tar.gz"
-cd nginx-1.7.2/
+tar -zxvf $soft_dir"/nginx-1.7.10.tar.gz"
+cd nginx-1.7.10/
 ./configure --user=www \
 --group=www \
 --prefix=/usr/local/nginx \
