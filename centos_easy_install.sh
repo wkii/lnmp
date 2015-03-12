@@ -187,6 +187,7 @@ cd php-5.5.22
 --prefix=/usr/local/php \
 --disable-rpath \
 --with-config-file-path=/usr/local/php/etc \
+--with-config-file-scan-dir=/usr/local/php/etc/conf.d \
 --with-iconv-dir \
 --enable-exif \
 --enable-soap \
